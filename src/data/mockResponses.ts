@@ -3,13 +3,13 @@ import type { AIResult, QuickAction } from "../types";
 export const quickActions: QuickAction[] = [
   {
     id: "find-image",
-    label: "帮我找一下之前的哪张图片",
+    label: "找之前那张图片",
     icon: "image",
     prompt: "帮我找一下之前的哪张图片"
   },
   {
     id: "work-progress",
-    label: "我的工作进度如何",
+    label: "继续我的工作",
     icon: "chart",
     prompt: "我的工作进度如何"
   }
@@ -18,7 +18,7 @@ export const quickActions: QuickAction[] = [
 export const mockResponses: Record<string, AIResult> = {
   "work-progress": {
     title: "今日进度总结",
-    summary: "你当前正在推进 EAZO LifeOS 黑客松作品，整体完成度约 65%。",
+    summary: "我从记忆层里看到：你当前正在推进 EAZO LifeOS 黑客松作品，整体完成度约 65%。",
     sections: [
       {
         title: "已完成",

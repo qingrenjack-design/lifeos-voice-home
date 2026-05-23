@@ -1,29 +1,24 @@
-import { BookMarked, Mic, PhoneOff } from "lucide-react";
+import { Mic } from "lucide-react";
 import type { CallControl } from "../types";
 
 const controls: CallControl[] = [
-  { id: "microphone", label: "麦克风", icon: Mic, variant: "primary" },
-  { id: "memory", label: "记忆", icon: BookMarked },
-  { id: "end", label: "结束", icon: PhoneOff, variant: "danger" }
+  { id: "microphone", label: "开始语音", icon: Mic, variant: "primary" }
 ];
 
 interface BottomControlsProps {
   onMicrophone: () => void;
-  onMemory: () => void;
-  onEnd: () => void;
   busy?: boolean;
 }
 
-export function BottomControls({ onMicrophone, onMemory, onEnd, busy }: BottomControlsProps) {
+export function BottomControls({ onMicrophone, busy }: BottomControlsProps) {
   return (
     <nav className="bottom-controls" aria-label="通话操作">
       {controls.map((control) => {
         const Icon = control.icon;
-        const handleClick = control.id === "microphone" ? onMicrophone : control.id === "memory" ? onMemory : onEnd;
         return (
-          <button className={`call-control call-control--${control.variant ?? "default"}`} key={control.id} type="button" onClick={handleClick} disabled={busy && control.id !== "end"}>
+          <button className={`call-control call-control--${control.variant ?? "default"}`} key={control.id} type="button" onClick={onMicrophone} disabled={busy}>
             <span className="call-control-icon">
-              <Icon size={28} strokeWidth={control.id === "end" ? 3.2 : 2.9} />
+              <Icon size={34} strokeWidth={2.8} />
             </span>
             <span className="call-control-label">{control.label}</span>
           </button>

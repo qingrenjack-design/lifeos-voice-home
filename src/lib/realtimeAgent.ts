@@ -2,8 +2,9 @@ import type { VoiceApiProvider } from "../types";
 
 export interface RealtimeAgentConfig {
   provider: VoiceApiProvider;
-  sessionEndpoint: string;
+  callEndpoint: string;
   knowledgeEndpoint: string;
+  memoryEndpoint: string;
 }
 
 export interface RealtimeAgentHandle {
@@ -12,18 +13,11 @@ export interface RealtimeAgentHandle {
   stop: () => void;
 }
 
-interface OpenAIRealtimeSession {
-  id?: string;
-  model: string;
-  client_secret: {
-    value: string;
-  };
-}
-
 export const realtimeAgentConfig: RealtimeAgentConfig = {
   provider: "mock",
-  sessionEndpoint: "/api/realtime/session",
-  knowledgeEndpoint: "/api/lifeos/query"
+  callEndpoint: "/api/realtime/call",
+  knowledgeEndpoint: "/api/lifeos/query",
+  memoryEndpoint: "/api/memory/query"
 };
 
 export async function startRealtimeAgent(config = realtimeAgentConfig): Promise<RealtimeAgentHandle> {
@@ -36,15 +30,6 @@ export async function startRealtimeAgent(config = realtimeAgentConfig): Promise<
   }
 
   const mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-  const session = await createRealtimeSession(config);
-
-  if (config.provider !== "openai_realtime") {
-    return {
-      mode: "webrtc",
-      sessionId: session.id,
-      stop: () => mediaStream.getTracks().forEach((track) => track.stop())
-    };
-  }
 
   const peer = new RTCPeerConnection();
   mediaStream.getTracks().forEach((track) => peer.addTrack(track, mediaStream));
@@ -56,8 +41,27 @@ export async function startRealtimeAgent(config = realtimeAgentConfig): Promise<
         type: "session.update",
         session: {
           instructions:
-            "You are EAZO LifeOS. Help the user search photos, files, calendar, tasks, projects, and personal memory through voice.",
-          modalities: ["text", "audio"]
+            "You are EAZO LifeOS. Use the same memory database for direct browsing and voice queries. Search photos, files, calendar, chats, projects, and work records by time.",
+          modalities: ["text", "audio"],
+          tools: [
+            {
+              type: "function",
+              name: "query_memory",
+              description: "Query the LifeOS memory database by natural language, date, and content type.",
+              parameters: {
+                type: "object",
+                properties: {
+                  query: { type: "string" },
+                  date: { type: "string" },
+                  types: {
+                    type: "array",
+                    items: { type: "string", enum: ["photo", "work", "chat", "file", "calendar"] }
+                  }
+                },
+                required: ["query"]
+              }
+            }
+          ]
         }
       })
     );
@@ -66,13 +70,12 @@ export async function startRealtimeAgent(config = realtimeAgentConfig): Promise<
   const offer = await peer.createOffer();
   await peer.setLocalDescription(offer);
 
-  const sdpResponse = await fetch(`https://api.openai.com/v1/realtime?model=${encodeURIComponent(session.model)}`, {
+  const sdpResponse = await fetch(config.callEndpoint, {
     method: "POST",
     headers: {
-      Authorization: `Bearer ${session.client_secret.value}`,
       "Content-Type": "application/sdp"
     },
-    body: offer.sdp
+    body: offer.sdp ?? ""
   });
 
   const answer = await sdpResponse.text();
@@ -80,30 +83,11 @@ export async function startRealtimeAgent(config = realtimeAgentConfig): Promise<
 
   return {
     mode: "webrtc",
-    sessionId: session.id,
+    sessionId: `webrtc-${Date.now()}`,
     stop: () => {
       dataChannel.close();
       peer.close();
       mediaStream.getTracks().forEach((track) => track.stop());
     }
   };
-}
-
-async function createRealtimeSession(config: RealtimeAgentConfig): Promise<OpenAIRealtimeSession> {
-  const response = await fetch(config.sessionEndpoint, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify({
-      provider: config.provider,
-      knowledgeEndpoint: config.knowledgeEndpoint
-    })
-  });
-
-  if (!response.ok) {
-    throw new Error("实时语音会话创建失败");
-  }
-
-  return response.json();
 }

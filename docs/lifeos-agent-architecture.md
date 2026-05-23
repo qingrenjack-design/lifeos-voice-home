@@ -4,11 +4,11 @@ EAZO LifeOS keeps API keys out of the frontend.
 
 ```txt
 Voice Home UI
-  -> permission adapters
-  -> local/native file handles or Eazo bridges
+  -> Memory Layer UI
+  -> permission adapters / Eazo native bridges
   -> /api/lifeos/permissions
-  -> knowledge index service
-  -> /api/lifeos/query
+  -> unified memory database
+  -> /api/memory/month and /api/memory/query
   -> realtime voice agent
 ```
 
@@ -25,6 +25,31 @@ Implementation:
 - `src/lib/lifeosCapabilities.ts`
 - `src/lib/knowledgeBase.ts`
 
+## Memory Layer
+
+The top-right calendar button opens the memory layer. It is the same data source used by voice.
+
+Required backend endpoints:
+
+```txt
+GET /api/memory/month?month=2026-05
+POST /api/memory/query
+POST /api/memory/ingest
+```
+
+Memory rows should include:
+
+```json
+{
+  "id": "mem_xxx",
+  "date": "2026-05-23",
+  "type": "photo | work | chat | file | calendar",
+  "title": "EAZO 海星首页主视觉",
+  "summary": "用于 LifeOS Voice Home 的主视觉图片",
+  "source": "photos | folder | calendar | projects"
+}
+```
+
 ## Realtime Voice Agent
 
 The mic button calls `startRealtimeAgent()` in `src/lib/realtimeAgent.ts`.
@@ -32,29 +57,17 @@ The mic button calls `startRealtimeAgent()` in `src/lib/realtimeAgent.ts`.
 Default provider is `mock`. To connect a real agent, change `realtimeAgentConfig.provider` to `openai_realtime` and implement:
 
 ```txt
-POST /api/realtime/session
+POST /api/realtime/call
 ```
 
-The backend returns an ephemeral realtime session:
-
-```json
-{
-  "id": "sess_xxx",
-  "model": "gpt-realtime",
-  "client_secret": {
-    "value": "ephemeral_client_secret"
-  }
-}
-```
-
-The frontend then opens a WebRTC session with microphone audio. No permanent API key is stored in the app.
+The frontend sends the WebRTC offer SDP to this endpoint. The backend calls OpenAI Realtime with the server-side API key and returns the answer SDP. No OpenAI API key is stored in the app.
 
 ## Knowledge Query
 
-Voice agent should call:
+Voice agent should call the same memory database:
 
 ```txt
-POST /api/lifeos/query
+POST /api/memory/query
 ```
 
 Payload:
@@ -62,7 +75,8 @@ Payload:
 ```json
 {
   "prompt": "帮我找一下之前那张图片",
-  "sources": ["photos", "folder", "calendar", "projects"]
+  "date": "2026-05-23",
+  "types": ["photo", "work", "chat", "file", "calendar"]
 }
 ```
 

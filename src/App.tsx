@@ -3,11 +3,11 @@ import { ShieldCheck } from "lucide-react";
 import { AIResultCard } from "./components/AIResultCard";
 import { BottomControls } from "./components/BottomControls";
 import { Header } from "./components/Header";
-import { KnowledgeAccessSheet } from "./components/KnowledgeAccessSheet";
 import { ListeningStatus } from "./components/ListeningStatus";
+import { MemoryLayer } from "./components/MemoryLayer";
 import { MascotStage } from "./components/MascotStage";
 import { QuickActionChips } from "./components/QuickActionChips";
-import { SceneButton } from "./components/SceneButton";
+import { mockMemoryEntries } from "./data/memoryData";
 import { mockResponses, quickActions } from "./data/mockResponses";
 import { initialKnowledgeStates } from "./lib/lifeosCapabilities";
 import { syncKnowledgePermissions } from "./lib/knowledgeBase";
@@ -24,7 +24,7 @@ const flowSteps: { state: VoiceState; delay: number }[] = [
 export default function App() {
   const [voiceState, setVoiceState] = useState<VoiceState>("idle");
   const [activeResult, setActiveResult] = useState<AIResult | null>(null);
-  const [knowledgeOpen, setKnowledgeOpen] = useState(false);
+  const [memoryOpen, setMemoryOpen] = useState(false);
   const [knowledgeStates, setKnowledgeStates] = useState<KnowledgePermissionState[]>(initialKnowledgeStates);
   const timers = useRef<number[]>([]);
 
@@ -32,12 +32,6 @@ export default function App() {
     timers.current.forEach((timer) => window.clearTimeout(timer));
     timers.current = [];
   }, []);
-
-  const resetCall = useCallback(() => {
-    clearTimers();
-    setActiveResult(null);
-    setVoiceState("idle");
-  }, [clearTimers]);
 
   const runMockFlow = useCallback(
     (actionId = "work-progress") => {
@@ -61,9 +55,11 @@ export default function App() {
   );
 
   const handleMicrophone = useCallback(async () => {
+    clearTimers();
+    setActiveResult(null);
     await startRealtimeAgent();
     runMockFlow("work-progress");
-  }, [runMockFlow]);
+  }, [clearTimers, runMockFlow]);
 
   const handleAuthorize = useCallback(async (id: KnowledgeSourceId) => {
     setKnowledgeStates((states) => states.map((state) => (state.id === id ? { ...state, status: "requesting" } : state)));
@@ -83,20 +79,25 @@ export default function App() {
   return (
     <main className="app-shell">
       <div className={`phone-frame phone-frame--${activeResult ? "result" : "home"}`}>
-        <Header />
-        <SceneButton />
+        <Header onMemory={() => setMemoryOpen(true)} />
         <div className="experience-area">
           <MascotStage voiceState={voiceState} />
           <ListeningStatus voiceState={voiceState} />
           <QuickActionChips actions={quickActions} onSelect={runMockFlow} disabled={isBusy} />
           {activeResult ? <AIResultCard result={activeResult} /> : null}
         </div>
-        <BottomControls onMicrophone={handleMicrophone} onMemory={() => setKnowledgeOpen(true)} onEnd={resetCall} busy={isBusy} />
+        <BottomControls onMicrophone={handleMicrophone} busy={isBusy} />
         <footer className="ai-footer">
           <ShieldCheck size={15} strokeWidth={2.4} />
           <span>内容由 AI 生成</span>
         </footer>
-        <KnowledgeAccessSheet open={knowledgeOpen} states={knowledgeStates} onClose={() => setKnowledgeOpen(false)} onAuthorize={handleAuthorize} />
+        <MemoryLayer
+          open={memoryOpen}
+          entries={mockMemoryEntries}
+          permissionStates={knowledgeStates}
+          onClose={() => setMemoryOpen(false)}
+          onAuthorize={handleAuthorize}
+        />
       </div>
     </main>
   );

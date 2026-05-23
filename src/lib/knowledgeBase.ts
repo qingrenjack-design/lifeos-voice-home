@@ -1,4 +1,4 @@
-import type { AIResult, KnowledgePermissionState, KnowledgeSourceId } from "../types";
+import type { AIResult, KnowledgePermissionState, KnowledgeSourceId, MemoryDay, MemoryEntryType } from "../types";
 
 export interface LifeOSKnowledgeQuery {
   prompt: string;
@@ -41,4 +41,27 @@ export async function syncKnowledgePermissions(states: KnowledgePermissionState[
     },
     body: JSON.stringify({ sources: payload })
   });
+}
+
+export async function fetchMemoryMonth(month: string): Promise<MemoryDay[] | null> {
+  const response = await fetch(`/api/memory/month?month=${encodeURIComponent(month)}`);
+  if (!response.ok) return null;
+  return response.json();
+}
+
+export async function queryMemoryDatabase(input: {
+  query: string;
+  date?: string;
+  types?: MemoryEntryType[];
+}): Promise<AIResult | null> {
+  const response = await fetch("/api/memory/query", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify(input)
+  });
+
+  if (!response.ok) return null;
+  return response.json();
 }

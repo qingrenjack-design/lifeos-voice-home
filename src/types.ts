@@ -24,6 +24,23 @@ export interface KnowledgePermissionState {
   detail?: string;
 }
 
+export type MemoryEntryType = "photo" | "work" | "chat" | "file" | "calendar";
+
+export interface MemoryEntry {
+  id: string;
+  date: string;
+  type: MemoryEntryType;
+  title: string;
+  summary: string;
+  source: KnowledgeSourceId;
+  thumbnail?: string;
+}
+
+export interface MemoryDay {
+  date: string;
+  entries: MemoryEntry[];
+}
+
 export interface QuickAction {
   id: string;
   label: string;
@@ -41,7 +58,7 @@ export interface AIResult {
 }
 
 export interface CallControl {
-  id: "microphone" | "memory" | "end";
+  id: "microphone";
   label: string;
   icon: LucideIcon;
   variant?: "danger" | "primary";

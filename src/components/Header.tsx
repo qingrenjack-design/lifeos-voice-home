@@ -1,6 +1,10 @@
-import { Asterisk } from "lucide-react";
+import { Asterisk, CalendarDays } from "lucide-react";
 
-export function Header() {
+interface HeaderProps {
+  onMemory: () => void;
+}
+
+export function Header({ onMemory }: HeaderProps) {
   return (
     <header className="header-bar" aria-label="EAZO LifeOS">
       <div className="brand-mark" aria-hidden="true">
@@ -10,8 +14,8 @@ export function Header() {
         <strong>EAZO</strong>
         <span>LifeOS</span>
       </div>
-      <button className="text-mode-button" type="button" aria-label="文字模式">
-        字
+      <button className="memory-entry-button" type="button" aria-label="打开记忆层" onClick={onMemory}>
+        <CalendarDays size={21} strokeWidth={2.6} />
       </button>
     </header>
   );
