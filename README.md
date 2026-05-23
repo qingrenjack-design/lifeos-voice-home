@@ -25,5 +25,7 @@ npm run build
 
 - Voice flow is mocked: `idle -> listening -> thinking -> speaking -> done`.
 - Quick actions and AI result data live in `src/data/mockResponses.ts`.
-- Future voice API config lives in `src/lib/voiceApi.ts`.
-- Current mascot is an inline SVG fallback. To use a real render, place `mascot.png` under `src/assets` and replace the fallback source in `src/components/MascotStage.tsx`.
+- Realtime voice agent entry lives in `src/lib/realtimeAgent.ts`.
+- Knowledge/permission adapters live in `src/lib/permissions.ts` and `src/lib/knowledgeBase.ts`.
+- Current mascot asset lives at `src/assets/mascot.png`. Replace it with a true transparent PNG when available.
+- Architecture notes live in `docs/lifeos-agent-architecture.md`.

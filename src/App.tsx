@@ -3,13 +3,17 @@ import { ShieldCheck } from "lucide-react";
 import { AIResultCard } from "./components/AIResultCard";
 import { BottomControls } from "./components/BottomControls";
 import { Header } from "./components/Header";
+import { KnowledgeAccessSheet } from "./components/KnowledgeAccessSheet";
 import { ListeningStatus } from "./components/ListeningStatus";
 import { MascotStage } from "./components/MascotStage";
 import { QuickActionChips } from "./components/QuickActionChips";
 import { SceneButton } from "./components/SceneButton";
 import { mockResponses, quickActions } from "./data/mockResponses";
-import { startVoiceSession } from "./lib/voiceApi";
-import type { AIResult, VoiceState } from "./types";
+import { initialKnowledgeStates } from "./lib/lifeosCapabilities";
+import { syncKnowledgePermissions } from "./lib/knowledgeBase";
+import { requestKnowledgePermission } from "./lib/permissions";
+import { startRealtimeAgent } from "./lib/realtimeAgent";
+import type { AIResult, KnowledgePermissionState, KnowledgeSourceId, VoiceState } from "./types";
 
 const flowSteps: { state: VoiceState; delay: number }[] = [
   { state: "listening", delay: 800 },
@@ -20,6 +24,8 @@ const flowSteps: { state: VoiceState; delay: number }[] = [
 export default function App() {
   const [voiceState, setVoiceState] = useState<VoiceState>("idle");
   const [activeResult, setActiveResult] = useState<AIResult | null>(null);
+  const [knowledgeOpen, setKnowledgeOpen] = useState(false);
+  const [knowledgeStates, setKnowledgeStates] = useState<KnowledgePermissionState[]>(initialKnowledgeStates);
   const timers = useRef<number[]>([]);
 
   const clearTimers = useCallback(() => {
@@ -55,9 +61,20 @@ export default function App() {
   );
 
   const handleMicrophone = useCallback(async () => {
-    await startVoiceSession();
+    await startRealtimeAgent();
     runMockFlow("work-progress");
   }, [runMockFlow]);
+
+  const handleAuthorize = useCallback(async (id: KnowledgeSourceId) => {
+    setKnowledgeStates((states) => states.map((state) => (state.id === id ? { ...state, status: "requesting" } : state)));
+    const result = await requestKnowledgePermission(id);
+
+    setKnowledgeStates((states) => {
+      const nextStates = states.map((state) => (state.id === id ? result : state));
+      syncKnowledgePermissions(nextStates).catch(() => undefined);
+      return nextStates;
+    });
+  }, []);
 
   useEffect(() => clearTimers, [clearTimers]);
 
@@ -74,11 +91,12 @@ export default function App() {
           <QuickActionChips actions={quickActions} onSelect={runMockFlow} disabled={isBusy} />
           {activeResult ? <AIResultCard result={activeResult} /> : null}
         </div>
-        <BottomControls onMicrophone={handleMicrophone} onEnd={resetCall} busy={isBusy} />
+        <BottomControls onMicrophone={handleMicrophone} onMemory={() => setKnowledgeOpen(true)} onEnd={resetCall} busy={isBusy} />
         <footer className="ai-footer">
           <ShieldCheck size={15} strokeWidth={2.4} />
           <span>内容由 AI 生成</span>
         </footer>
+        <KnowledgeAccessSheet open={knowledgeOpen} states={knowledgeStates} onClose={() => setKnowledgeOpen(false)} onAuthorize={handleAuthorize} />
       </div>
     </main>
   );

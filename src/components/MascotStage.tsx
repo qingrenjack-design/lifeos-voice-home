@@ -1,4 +1,5 @@
 import { useState } from "react";
+import mascotImage from "../assets/mascot.png";
 import type { VoiceState } from "../types";
 
 interface MascotStageProps {
@@ -20,7 +21,7 @@ export function MascotStage({ voiceState }: MascotStageProps) {
         {canTryImage ? (
           <img
             className="mascot-image"
-            src="/src/assets/mascot.png"
+            src={mascotImage}
             alt="橙色 EAZO 海星 AI 伙伴"
             onError={() => setImageFailed(true)}
           />

@@ -14,6 +14,16 @@ export interface VoiceConfig {
   endpoint: string;
 }
 
+export type KnowledgeSourceId = "photos" | "folder" | "calendar" | "projects";
+
+export type PermissionStatus = "idle" | "requesting" | "authorized" | "unavailable" | "denied";
+
+export interface KnowledgePermissionState {
+  id: KnowledgeSourceId;
+  status: PermissionStatus;
+  detail?: string;
+}
+
 export interface QuickAction {
   id: string;
   label: string;
@@ -31,7 +41,7 @@ export interface AIResult {
 }
 
 export interface CallControl {
-  id: "microphone" | "memory" | "video" | "end";
+  id: "microphone" | "memory" | "end";
   label: string;
   icon: LucideIcon;
   variant?: "danger" | "primary";
